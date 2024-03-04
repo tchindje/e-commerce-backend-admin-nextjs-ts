@@ -4,6 +4,7 @@ import Image from "next/image";
 import Layout from "@/components/Layout";
 
 export default function Home() {
+  
   const { data: session } = useSession();
 
   return (

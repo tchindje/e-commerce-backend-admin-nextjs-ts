@@ -9,8 +9,8 @@ export async function mongooseConnect() {
     return mongoose
       .connect(uri, {})
       .then(() => {
-        console.log("connnected to mongoDB");
+        console.log("Connnected to mongoDB sucessfully.");
       })
-      .catch((err) => console.log("impossible to connect to mongoDB"));
+      .catch((err) => console.log("Impossible to connect to mongoDB."));
   }
 }

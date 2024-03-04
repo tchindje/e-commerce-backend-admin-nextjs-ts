@@ -6,6 +6,12 @@ export interface ProductType {
   images?: string[];
 }
 
+export interface CategoryType {
+  _id?: string;
+  name: string;
+  parent?: CategoryType;
+}
+
 export enum SubmitAction {
   POST = "POST",
   PUT = "PUT",
