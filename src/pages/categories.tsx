@@ -1,9 +1,20 @@
-import React, { FormEventHandler, useEffect, useState } from "react";
+import React, {
+  ChangeEvent,
+  FormEventHandler,
+  useEffect,
+  useState,
+} from "react";
 import Layout from "@/components/Layout";
 import axios from "axios";
 import { CategoryType } from "../../types";
+import Modal from "@/components/Modal";
 
 type Props = {};
+
+type PropertyType = {
+  name: string;
+  values: string;
+};
 
 const Categories = (props: Props) => {
   const [isSaving, setSaving] = useState(false);
@@ -11,24 +22,41 @@ const Categories = (props: Props) => {
   const [category, setCategory] = useState<string>("");
   const [parentCategory, setParentCategory] = useState<string>("");
   const [editedCategory, setEditedCategory] = useState<CategoryType>();
+  const [deletedCategory, setDeletedCategory] = useState<CategoryType>();
   const [loadedCaterories, setLoadedCategories] = useState<CategoryType[]>([]);
+  const [properties, setProperties] = useState<PropertyType[]>([]);
+
+  const [isOpenModal, setOpenModal] = useState(false);
 
   const saveCategoryHandler: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
 
     //validation caterogy
     if (category.length > 2) {
-      let data = { name: category, parent: parentCategory };
+      let data: any = { category };
+
+      if (parentCategory) {
+        data = { ...data, parentCategory };
+      }
+
+      if (properties) {
+        data = {
+          ...data,
+          properties: properties.map((p) => ({
+            name: p.name,
+            values: p.values.split(","),
+          })),
+        };
+      }
 
       if (editedCategory) {
         try {
+          data = { ...data, _id: editedCategory._id };
           setSaving(true);
-          await axios.put("/api/categories", {
-            ...data,
-            _id: editedCategory._id,
-          });
+          await axios.put("/api/categories", data);
           setCategory("");
           setEditedCategory(undefined);
+          setProperties([]);
           setParentCategory("");
           setSaving(false);
           fetchCategories();
@@ -41,6 +69,7 @@ const Categories = (props: Props) => {
           await axios.post("/api/categories", data);
           setCategory("");
           setEditedCategory(undefined);
+          setProperties([]);
           setParentCategory("");
           setSaving(false);
           fetchCategories();
@@ -54,7 +83,7 @@ const Categories = (props: Props) => {
 
   const fetchCategories = () => {
     axios
-      .get("api/categories")
+      .get("/api/categories")
       .then((res) => {
         setLoadedCategories(res.data);
       })
@@ -65,21 +94,78 @@ const Categories = (props: Props) => {
 
   const EditCategoryHandler = (category: CategoryType) => {
     setEditedCategory(category);
+
+    const properties = category.properties?.map((propperty) => {
+      let values = propperty.values.join(",");
+      let name = propperty.name;
+      return {
+        name,
+        values,
+      };
+    });
+
+    setProperties(properties || []);
     setCategory(category.name);
     setParentCategory(category.parent?._id || "");
+  };
+
+  const CloseModal = () => {
+    setOpenModal(false);
+  };
+
+  const confirmDeleteHandler = (category: CategoryType) => {
+    setDeletedCategory(category);
+    setOpenModal(true);
   };
 
   const DeleteCategoryHandler = async (category: CategoryType) => {
     try {
       await axios.delete(`/api/categories?categoryId=${category._id}`);
+      setDeletedCategory(undefined);
       fetchCategories();
     } catch (error) {
       console.log("Error occur while deleting a category.");
     }
   };
 
+  const addPropertyHandler = () => {
+    setProperties((prev) => {
+      return [...prev, { name: "", values: "" }];
+    });
+  };
+
+  const propertyNameChangeHandler = (index: number, newName: string) => {
+    setProperties((prev) => {
+      let properties = [...prev];
+      properties[index].name = newName;
+      return properties;
+    });
+  };
+
+  const propertyValueChangeHandler = (index: number, newValue: string) => {
+    setProperties((prev) => {
+      let properties = [...prev];
+      properties[index].values = newValue;
+      return properties;
+    });
+  };
+
+  const removePropertyHandler = (index: number) => {
+    setProperties((prev) => {
+      let newProperties = [...prev].filter((prop, i) => i !== index);
+      return newProperties;
+    });
+  };
+
   useEffect(() => {
     fetchCategories();
+
+    // if (loadedCaterories) {
+    //  const properties = loadedCaterories.map((cat) => {
+    //     cat.properties;
+    //   });
+
+    // }
   }, []);
 
   return (
@@ -91,34 +177,93 @@ const Categories = (props: Props) => {
           : `Create  new category `}
       </label>
 
-      <form onSubmit={saveCategoryHandler} className="flex gap-1">
-        <input
-          type="text"
-          placeholder="Category name"
-          className="mb-0"
-          onChange={(e) => setCategory(e.target.value)}
-          value={category}
-        />
-        <select
-          className="mb-0"
-          name="parentCategory   "
-          value={parentCategory}
-          onChange={(e) => setParentCategory(e.target.value)}
-        >
-          <option>No parent category</option>
-          {loadedCaterories?.map((category) => (
-            <option key={category._id} value={category._id}>
-              {category.name}
-            </option>
-          ))}
-        </select>
+      <form onSubmit={saveCategoryHandler} className="flex  flex-col gap-2">
+        <div className="flex gap-1">
+          <input
+            type="text"
+            placeholder="Category name"
+            className="mb-0"
+            onChange={(e) => setCategory(e.target.value)}
+            value={category}
+          />
+          <select
+            className="mb-0"
+            name="parentCategory   "
+            value={parentCategory}
+            onChange={(e) => setParentCategory(e.target.value)}
+          >
+            <option>No parent category</option>
+            {loadedCaterories?.map((category) => (
+              <option key={category._id} value={category._id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="">
+          <label className="block">Properties</label>
+          <button
+            type="button"
+            className="btn-default"
+            onClick={addPropertyHandler}
+          >
+            ADD New Properties
+          </button>
+          {properties &&
+            properties.length > 0 &&
+            properties.map((property, index) => (
+              <div key={index} className="flex gap-2 mt-2">
+                <input
+                  type="text"
+                  className="mb-0"
+                  placeholder="property name"
+                  value={property.name}
+                  onChange={(e) =>
+                    propertyNameChangeHandler(index, e.target.value)
+                  }
+                />
+                <input
+                  type="text"
+                  placeholder="property value"
+                  className="mb-0"
+                  value={property.values}
+                  onChange={(e) =>
+                    propertyValueChangeHandler(index, e.target.value)
+                  }
+                />
+                <button
+                  className="btn-default"
+                  type="button"
+                  onClick={() => removePropertyHandler(index)}
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+        </div>
 
-        <button type="submit" className="btn-primary py-1 ">
-          Save
-        </button>
+        <div className="flex gap-2 mt-2">
+          {editedCategory && (
+            <button
+              type="button"
+              className="btn-default"
+              onClick={() => {
+                setEditedCategory(undefined);
+                setCategory("");
+                setProperties([]);
+                setParentCategory("");
+              }}
+            >
+              Cancel
+            </button>
+          )}
+          <button type="submit" className="btn-primary py-1  w-[100px] ">
+            Save
+          </button>
+        </div>
       </form>
 
-      {loadedCaterories && loadedCaterories.length > 0 ? (
+      {loadedCaterories && loadedCaterories.length > 0 && !editedCategory && (
         <table className="mt-4  rounded-md basic">
           <thead>
             <tr>
@@ -158,7 +303,7 @@ const Categories = (props: Props) => {
                 <td>
                   <button
                     className="btn-red flex gap-2 items-center"
-                    onClick={() => DeleteCategoryHandler(category)}
+                    onClick={() => confirmDeleteHandler(category)}
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -181,8 +326,14 @@ const Categories = (props: Props) => {
             ))}
           </tbody>
         </table>
-      ) : (
-        <div>No category to display</div>
+      )}
+
+      {isOpenModal && deletedCategory && (
+        <Modal
+          onClose={CloseModal}
+          category={deletedCategory}
+          onDelete={DeleteCategoryHandler}
+        />
       )}
     </Layout>
   );

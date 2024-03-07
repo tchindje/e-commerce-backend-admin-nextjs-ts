@@ -6,9 +6,14 @@ const CategoryShema = new Schema({
     require: true,
   },
 
+  properties: [
+    {
+      type: Object,
+    },
+  ],
+
   parent: {
     type: mongoose.Types.ObjectId,
-    require: false,
     ref: "Category",
   },
 });

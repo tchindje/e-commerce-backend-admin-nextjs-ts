@@ -1,13 +1,16 @@
-import React, { ChangeEventHandler, FormEventHandler, useState } from "react";
-import { ProductType, SubmitAction } from "../../types";
+import React, {
+  ChangeEventHandler,
+  FormEventHandler,
+  useEffect,
+  useState,
+} from "react";
+import { CategoryType, ProductType, SubmitAction } from "../../types";
 import axios from "axios";
 import { File } from "buffer";
 import ImagesPreview from "./ImagePreview";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Spinner from "./Spinner";
-
-import { ReactSortable } from "react-sortablejs";
 
 function ProductForm({
   product,
@@ -19,6 +22,9 @@ function ProductForm({
   const [title, setTitle] = useState(product?.title || "");
   const [description, setDescription] = useState(product?.description || "");
   const [price, setPrice] = useState<number>(product?.price || 0);
+  const [category, setCategory] = useState<string>(product?.category || "");
+  const [listCategories, setListCategories] = useState<CategoryType[]>([]);
+
   const [images, setImages] = useState<File[]>([]);
   const [isUploadingFile, setUploadingFile] = useState<boolean>(false);
   const [error, setError] = useState(false);
@@ -31,12 +37,26 @@ function ProductForm({
 
   const router = useRouter();
 
+  useEffect(() => {
+    const fetchCategories = () => {
+      axios
+        .get("/api/categories")
+        .then((res) => {
+          setListCategories(res.data);
+        })
+        .catch((error) => {
+          console.log("error while fetching  categories.");
+        });
+    };
+    fetchCategories();
+  }, []);
+
   const submitHandler: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
 
     //validation input form
     if (price > 0 && description && title) {
-      const data = { title, price, description, images: imagesUrl };
+      const data = { title, price, description, images: imagesUrl , category};
 
       if (action === SubmitAction.POST) {
         try {
@@ -111,6 +131,24 @@ function ProductForm({
         onChange={(e) => setTitle(e.target.value)}
         value={title}
       />
+
+      <label className="text-gray-800" htmlFor="name">
+        Category
+      </label>
+
+      <select
+        name="category"
+        value={category}
+        onChange={(e) => setCategory(e.target.value)}
+        id=""
+      >
+        <option value="">Uncategorize</option>
+        {listCategories.map((cat) => (
+          <option key={cat._id} value={cat._id}>
+            {cat.name}
+          </option>
+        ))}
+      </select>
 
       <label className="text-gray-800">photos</label>
 

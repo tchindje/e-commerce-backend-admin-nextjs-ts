@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Schema, model, models } from "mongoose";
 
 const ProductShema = new Schema({
@@ -5,6 +6,7 @@ const ProductShema = new Schema({
     type: String,
     require: true,
   },
+
   price: {
     type: Number,
     require: true,
@@ -16,6 +18,11 @@ const ProductShema = new Schema({
   images: {
     type: [String],
     require: false,
+  },
+  category: {
+    type: mongoose.Types.ObjectId,
+    require: false,
+    ref: "Category",
   },
 });
 

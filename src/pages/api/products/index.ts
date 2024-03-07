@@ -25,14 +25,24 @@ export default async function handler(
 
   if (method === "POST") {
     try {
-      const { title, price, description, images } = req.body;
-
-      const newProduct = new Product({
-        title,
-        price,
-        description,
-        images,
-      });
+      const { title, price, description, images, category } = req.body;
+      let newProduct = null;
+      if (category) {
+        newProduct = new Product({
+          title,
+          price,
+          description,
+          category,
+          images,
+        });
+      } else {
+        newProduct = new Product({
+          title,
+          price,
+          description,
+          images,
+        });
+      }
 
       await newProduct.save();
       return res.status(201).json({
@@ -41,15 +51,25 @@ export default async function handler(
       });
     } catch (error) {
       console.log("error handling a file");
+      return res.status(500).send({ message: error });
     }
   }
 
   if (method === "PUT") {
-    const { title, price, description, images, id } = req.body;
-    const product = await Product.updateOne(
-      { _id: id },
-      { title, price, description, images }
-    );
+    const { title, price, description, images, id, category } = req.body;
+    let product = null;
+
+    if (category.trim() !== "") {
+      product = await Product.updateOne(
+        { _id: id },
+        { title, price, description, images, category }
+      );
+    } else {
+      product = await Product.updateOne(
+        { _id: id },
+        { title, price, description, images }
+      );
+    }
     return res
       .status(200)
       .json({ message: "updating product successfully", product });

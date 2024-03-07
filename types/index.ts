@@ -3,12 +3,14 @@ export interface ProductType {
   title: string;
   price: number;
   description: string;
+  category?: any;
   images?: string[];
 }
 
 export interface CategoryType {
   _id?: string;
   name: string;
+  properties?: { name: string; values: string[] }[];
   parent?: CategoryType;
 }
 

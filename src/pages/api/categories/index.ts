@@ -11,35 +11,6 @@ export default async function handler(
 
   const { method } = req;
 
-  if (method === "POST") {
-    try {
-      const { category, parentCategory } = req.body;
-      let newCategory = null;
-
-      if (parentCategory) {
-        newCategory = new Category({
-          name: category,
-          parent: parentCategory,
-        });
-      } else {
-        newCategory = new Category({
-          name: category,
-        });
-      }
-
-      await newCategory.save();
-      console.log(newCategory);
-
-      return res.status(201).json({
-        message: "Category created successfully!",
-        category: newCategory,
-      });
-    } catch (error) {
-      console.log("Error while saving category in DB.");
-      res.status(500).send({ message: "Internal sever Error." });
-    }
-  }
-
   if (method === "GET") {
     if (req.query?.categoryId) {
       const category = await Category.findById({
@@ -59,11 +30,41 @@ export default async function handler(
     }
   }
 
+  if (method === "POST") {
+    try {
+      const { category, parentCategory, properties } = req.body;
+      console.log(properties);
+
+      let newCategory = new Category({
+        name: category,
+        parent: parentCategory || undefined,
+        properties: properties || undefined,
+      });
+
+      await newCategory.save();
+
+      return res.status(201).json({
+        message: "Category created successfully!",
+        category: newCategory,
+      });
+    } catch (error) {
+      console.log("Error while saving category in DB.");
+      res.status(500).send({ message: "Internal sever Error." });
+    }
+  }
+
   if (method === "PUT") {
-    const { name, parent, _id } = req.body;
-    const category = await Category.updateOne({ _id: _id }, { name, parent });
+    const { category, parentCategory, _id, properties } = req.body;
+    const cat = await Category.updateOne(
+      { _id: _id },
+      {
+        name: category,
+        parent: parentCategory || undefined,
+        properties: properties || undefined,
+      }
+    );
     return res
       .status(200)
-      .json({ message: "updating category successfully", category });
+      .json({ message: "updating category successfully", cat });
   }
 }
