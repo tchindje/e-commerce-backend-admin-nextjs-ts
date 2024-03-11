@@ -1,11 +1,17 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { mongooseConnect } from "../../../../lib/mongoose";
 import { Category } from "../../../../models/category";
+import { isAdminRequest } from "../auth/[...nextauth]";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+
+  
+  //check admin user
+  await isAdminRequest(req, res);
+
   //connect to monggodb via mongoose odm
   await mongooseConnect();
 

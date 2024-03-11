@@ -23,6 +23,7 @@ function ProductForm({
   const [description, setDescription] = useState(product?.description || "");
   const [price, setPrice] = useState<number>(product?.price || 0);
   const [category, setCategory] = useState<string>(product?.category || "");
+  const [properties, setProperties] = useState<any>(product?.properties || {});
   const [listCategories, setListCategories] = useState<CategoryType[]>([]);
 
   const [images, setImages] = useState<File[]>([]);
@@ -32,8 +33,6 @@ function ProductForm({
   const [imagesUrl, setImagesUrl] = useState<string[] | undefined>(
     product?.images
   );
-
-  let id = product?._id;
 
   const router = useRouter();
 
@@ -51,12 +50,21 @@ function ProductForm({
     fetchCategories();
   }, []);
 
+  let id = product?._id;
   const submitHandler: FormEventHandler<HTMLFormElement> = async (e) => {
     e.preventDefault();
+    console.log(properties);
 
     //validation input form
     if (price > 0 && description && title) {
-      const data = { title, price, description, images: imagesUrl , category};
+      const data = {
+        title,
+        price,
+        description,
+        images: imagesUrl,
+        category,
+        properties,
+      };
 
       if (action === SubmitAction.POST) {
         try {
@@ -73,7 +81,6 @@ function ProductForm({
       if (action === SubmitAction.PUT) {
         try {
           setError(false);
-
           const res = await axios.put("/api/products", { ...data, id });
           console.log(res.data.product);
           return router.push("/products");
@@ -118,11 +125,33 @@ function ProductForm({
     }
   };
 
+  const propertiesToFill = [];
+  if (listCategories.length > 0 && category) {
+    let selectedCategory = listCategories.find(({ _id }) => _id === category);
+    propertiesToFill.push(...(selectedCategory?.properties || []));
+
+    while (selectedCategory?.parent?._id) {
+      let selectedParentCat = listCategories.find(
+        ({ _id }) =>
+          _id === selectedCategory?.parent?._id && _id !== selectedCategory?._id
+      );
+
+      propertiesToFill.push(...(selectedParentCat?.properties || []));
+      // iterate to list of cate from child to  parent and fill properties to display
+      selectedCategory = selectedParentCat;
+    }
+  }
+
+  const setProductProperties = (name: string, value: string) => {
+    setProperties((prev: any) => {
+      let newProp = { ...prev, [name]: value };
+      return newProp;
+    });
+  };
+
   return (
     <form className="flex flex-col" onSubmit={submitHandler}>
-      <label className="text-gray-800" htmlFor="name">
-        Product name
-      </label>
+      <label htmlFor="name">Product name</label>
       <input
         name="name"
         id="name"
@@ -132,9 +161,7 @@ function ProductForm({
         value={title}
       />
 
-      <label className="text-gray-800" htmlFor="name">
-        Category
-      </label>
+      <label htmlFor="name">Category</label>
 
       <select
         name="category"
@@ -150,7 +177,25 @@ function ProductForm({
         ))}
       </select>
 
-      <label className="text-gray-800">photos</label>
+      {propertiesToFill.length > 0 &&
+        propertiesToFill.map((p) => (
+          <div className="" key={p.name}>
+            <label>{p.name}</label>
+            <select
+              name={p.name}
+              value={properties[p.name]}
+              onChange={(e) => setProductProperties(p.name, e.target.value)}
+            >
+              {p.values.map((v) => (
+                <option key={v} value={v}>
+                  {v}
+                </option>
+              ))}
+            </select>
+          </div>
+        ))}
+
+      <label>photos</label>
 
       <div className="mb-2 flex flex-wrap  gap-2 pr-3">
         {imagesUrl && (
@@ -163,7 +208,7 @@ function ProductForm({
         )}
         <label
           className="w-24 h-24 text-center flex flex-col items-center justify-center  text-sm gap-1 
-                    cursor-pointer text-gray-500 rounded-lg bg-gray-200 "
+                    cursor-pointer border  border-blue-400 rounded-lg  text-blue-800"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -179,7 +224,7 @@ function ProductForm({
               d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5"
             />
           </svg>
-          <div className="">Upload</div>
+          <div>Upload</div>
           <input
             type="file"
             name="photos"
@@ -190,7 +235,7 @@ function ProductForm({
         </label>
       </div>
 
-      <label className="text-gray-800 mt-2" htmlFor="description">
+      <label className=" mt-2" htmlFor="description">
         Description
       </label>
       <textarea
@@ -204,9 +249,7 @@ function ProductForm({
         value={description}
       ></textarea>
 
-      <label className="text-gray-800" htmlFor="price">
-        Price (FCFA)
-      </label>
+      <label htmlFor="price">Price (FCFA)</label>
       <input
         name="price"
         onChange={(e) => setPrice(e.target.value as unknown as number)}
@@ -216,7 +259,11 @@ function ProductForm({
         placeholder="Price"
         value={price}
       />
-      <button className="btn-primary  md:w-[100px]">Save</button>
+      <div className="flex justify-center  ">
+        <button className="bg-blue-800 text-white w-full md:w-[200px] rounded-md ">
+          Save
+        </button>
+      </div>
     </form>
   );
 }

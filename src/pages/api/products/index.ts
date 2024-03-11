@@ -3,11 +3,16 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { Product } from "../../../../models/product";
 import { mongooseConnect } from "../../../../lib/mongoose";
 import { unlink } from "fs/promises";
+import { getServerSession } from "next-auth";
+import { authOptions, isAdminRequest } from "../auth/[...nextauth]";
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  // check admin user
+  await isAdminRequest(req, res);
+
   //connect to monggodb via mongoose odm
   await mongooseConnect();
 
@@ -25,24 +30,17 @@ export default async function handler(
 
   if (method === "POST") {
     try {
-      const { title, price, description, images, category } = req.body;
-      let newProduct = null;
-      if (category) {
-        newProduct = new Product({
-          title,
-          price,
-          description,
-          category,
-          images,
-        });
-      } else {
-        newProduct = new Product({
-          title,
-          price,
-          description,
-          images,
-        });
-      }
+      const { title, price, description, images, category, properties } =
+        req.body;
+
+      let newProduct = new Product({
+        title,
+        price,
+        description,
+        category: category || undefined,
+        properties: properties || undefined,
+        images,
+      });
 
       await newProduct.save();
       return res.status(201).json({
@@ -56,20 +54,20 @@ export default async function handler(
   }
 
   if (method === "PUT") {
-    const { title, price, description, images, id, category } = req.body;
-    let product = null;
+    const { title, price, description, images, id, category, properties } =
+      req.body;
+    let product = await Product.updateOne(
+      { _id: id },
+      {
+        title,
+        price,
+        description,
+        images,
+        category: category || undefined,
+        properties: properties || undefined,
+      }
+    );
 
-    if (category.trim() !== "") {
-      product = await Product.updateOne(
-        { _id: id },
-        { title, price, description, images, category }
-      );
-    } else {
-      product = await Product.updateOne(
-        { _id: id },
-        { title, price, description, images }
-      );
-    }
     return res
       .status(200)
       .json({ message: "updating product successfully", product });

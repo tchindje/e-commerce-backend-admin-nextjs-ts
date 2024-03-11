@@ -9,8 +9,6 @@ type Props = {
 };
 
 const ImagesPreview = ({ images, setImages }: Props) => {
-  console.log(images, "images preview");
-
   return (
     <ReactSortable
       list={images}

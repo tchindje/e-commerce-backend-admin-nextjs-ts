@@ -24,6 +24,10 @@ const ProductShema = new Schema({
     require: false,
     ref: "Category",
   },
+
+  properties: {
+    type: Object,
+  },
 });
 
 export const Product = models.Product || model("Product", ProductShema);

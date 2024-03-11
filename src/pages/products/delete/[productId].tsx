@@ -33,7 +33,7 @@ const DeleteProduct = (props: Props) => {
       return router.push("/products");
     } catch (error) {
       setErrorDeleting(true);
-      console.log("Error occur while deleting a ptoduct.");
+      console.log("Error occur while deleting a product.");
     }
   };
 

@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import formidable from "formidable";
 import path from "path";
+import { isAdminRequest } from "../auth/[...nextauth]";
 
 export const config = {
   api: {
@@ -38,6 +39,8 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  await isAdminRequest(req, res);
+
   if (req.method === "POST") {
     try {
       const { fields, files } = await readFile(req, true);

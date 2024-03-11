@@ -34,7 +34,6 @@ const Products = (props: Props) => {
             <tr>
               <td>Product Name</td>
               <td></td>
-              <td></td>
             </tr>
           </thead>
           <tbody>
@@ -62,8 +61,7 @@ const Products = (props: Props) => {
                     </svg>
                     Edit
                   </Link>
-                </td>
-                <td>
+
                   <Link
                     className="btn-red"
                     href={`/products/delete/${product._id}`}
